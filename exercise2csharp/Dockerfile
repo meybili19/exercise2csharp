@@ -1,22 +1,19 @@
-# Use an official .NET SDK image to build the application
-FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
+FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS base
 WORKDIR /app
-
-# Copy project files and restore dependencies
-COPY *.csproj .
-RUN dotnet restore
-
-# Copy all files and build the application
-COPY . .
-RUN dotnet publish -c Release -o /out
-
-# Use a runtime image to run the application
-FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS runtime
-WORKDIR /app
-COPY --from=build /out .
-
-# Expose port 80 for the application
 EXPOSE 80
 
-# Command to run the application
+FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
+WORKDIR /src
+COPY ["exercise2csharp/exercise2csharp.csproj", "exercise2csharp/"]
+RUN dotnet restore "exercise2csharp/exercise2csharp.csproj"
+COPY . .
+WORKDIR "/src/exercise2csharp"
+RUN dotnet build "exercise2csharp.csproj" -c Release -o /app/build
+
+FROM build AS publish
+RUN dotnet publish "exercise2csharp.csproj" -c Release -o /app/publish
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "exercise2csharp.dll"]
